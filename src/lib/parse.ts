@@ -14,7 +14,22 @@ export function flattenHotels(data: ApiResponse): HotelItem[] {
     const imageUrl = basic?.hotelImageUrl ?? basic?.hotelThumbnailUrl ?? undefined;
     const minCharge = basic?.hotelMinCharge ?? basic?.minCharge ?? undefined;
     const address = [basic?.address1, basic?.address2].filter(Boolean).join(" ");
-    const infoUrl = basic?.hotelInformationUrl ?? basic?.hotelInformationUrlPc ?? basic?.planListUrl;
+    // 優先: API が返す情報ページURL / プラン一覧URL
+    let infoUrl: string | undefined =
+      basic?.hotelInformationUrl ??
+      basic?.hotelInformationUrlPc ??
+      basic?.planListUrl;
+
+    // フォールバック: hotelNo 等が分かる場合は hinfo 直リンクを生成
+    if (!infoUrl) {
+      const hotelNo = basic?.hotelNo ?? basic?.hotelCode ?? basic?.hotelId;
+      if (hotelNo) {
+        // 楽天トラベルのホテル詳細（hinfo）形式
+        infoUrl = `https://hotel.travel.rakuten.co.jp/hinfo/?f_no=${encodeURIComponent(
+          String(hotelNo)
+        )}`;
+      }
+    }
     const reviewAverage =
       basic?.reviewAverage !== undefined
         ? Number(basic.reviewAverage)
@@ -25,4 +40,3 @@ export function flattenHotels(data: ApiResponse): HotelItem[] {
   }
   return items;
 }
-

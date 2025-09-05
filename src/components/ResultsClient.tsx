@@ -5,11 +5,13 @@ import { HotelCard } from "@/components/HotelCard";
 import type { HotelItem } from "@/lib/types";
 import { flattenHotels } from "@/lib/parse";
 import { findBudget } from "@/lib/regions";
+import { buildKeywordSearchUrl, toAffiliateLink } from "@/lib/affiliate";
 
 export default function ResultsClient({ query }: { query: string }) {
   const [items, setItems] = useState<HotelItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(query);
@@ -24,6 +26,7 @@ export default function ResultsClient({ query }: { query: string }) {
     async function run() {
       setLoading(true);
       setError(null);
+      setFallbackUrl(null);
       try {
         const res = await fetch(`/api/search?${params.toString()}`);
         const data = await res.json();
@@ -31,6 +34,11 @@ export default function ResultsClient({ query }: { query: string }) {
         setItems(flattenHotels(data));
       } catch (e: any) {
         setError(e?.message || "エラーが発生しました");
+        // APIが使えない場合のフォールバック: 楽天トラベルの検索ページへ誘導
+        const prefecture = params.get("prefecture");
+        const travelType = params.get("travelType");
+        const kwUrl = buildKeywordSearchUrl({ prefecture, travelType });
+        setFallbackUrl(toAffiliateLink(kwUrl));
       } finally {
         setLoading(false);
       }
@@ -41,7 +49,21 @@ export default function ResultsClient({ query }: { query: string }) {
 
   if (loading) return <div className="text-sm">検索中...</div>;
   if (error)
-    return <div className="text-sm text-red-600 dark:text-red-400">{error}</div>;
+    return (
+      <div className="text-sm">
+        <div className="text-red-600 dark:text-red-400 mb-3">{error}</div>
+        {fallbackUrl && (
+          <a
+            href={fallbackUrl}
+            target="_blank"
+            rel="nofollow sponsored noopener"
+            className="inline-flex items-center rounded-md bg-foreground text-background px-3 py-1.5 text-sm hover:opacity-90"
+          >
+            楽天トラベルで検索結果を開く
+          </a>
+        )}
+      </div>
+    );
   if (!items) return null;
 
   return (

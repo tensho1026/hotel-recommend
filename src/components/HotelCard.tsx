@@ -28,6 +28,12 @@ export function HotelCard({ hotel }: { hotel: HotelItem }) {
               href={link}
               target="_blank"
               rel="nofollow sponsored noopener"
+              onClick={() => {
+                try {
+                  // リコメンドを押した時のリンクをコンソールに表示
+                  console.info("[Affiliate Link]", link);
+                } catch {}
+              }}
               className="hover:underline"
             >
               {hotel.name}

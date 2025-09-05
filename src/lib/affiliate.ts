@@ -23,3 +23,15 @@ export function toAffiliateLink(hotelInformationUrl: string) {
     return `${base}${sep}pc=${encodeURIComponent(hotelInformationUrl)}`;
   }
 }
+
+// 楽天トラベルのキーワード検索ページURLを作成（安全な最小構成）
+// 例: https://search.travel.rakuten.co.jp/ds/hotellist?kwd=東京%20ホテル%20家族旅行
+export function buildKeywordSearchUrl(params: {
+  prefecture?: string | null;
+  travelType?: string | null;
+}) {
+  const { prefecture, travelType } = params;
+  const kw = [prefecture, 'ホテル', travelType].filter(Boolean).join(' ');
+  const base = 'https://search.travel.rakuten.co.jp/ds/hotellist';
+  return `${base}?kwd=${encodeURIComponent(kw || 'ホテル')}`;
+}

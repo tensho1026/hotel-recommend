@@ -6,6 +6,7 @@ import type { NightOption } from "@/lib/regions";
 import { HotelCard } from "./HotelCard";
 import type { HotelItem } from "@/lib/types";
 import { flattenHotels } from "@/lib/parse";
+import { buildKeywordSearchUrl, toAffiliateLink } from "@/lib/affiliate";
 
 export default function SearchForm() {
   const [region, setRegion] = useState<keyof typeof REGIONS>("関東");
@@ -16,6 +17,7 @@ export default function SearchForm() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<HotelItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
 
   const prefectures = useMemo(() => REGIONS[region], [region]);
 
@@ -23,6 +25,7 @@ export default function SearchForm() {
     setLoading(true);
     setError(null);
     setResults(null);
+    setFallbackUrl(null);
     try {
       const selectedBudget = BUDGETS.find((b) => b.label === budgetLabel);
       const params = new URLSearchParams({
@@ -44,6 +47,9 @@ export default function SearchForm() {
       setResults(items);
     } catch (e: any) {
       setError(e?.message || "エラーが発生しました");
+      // APIが使えない場合のフォールバック: 楽天トラベルの検索ページへ誘導
+      const kwUrl = buildKeywordSearchUrl({ prefecture, travelType });
+      setFallbackUrl(toAffiliateLink(kwUrl));
     } finally {
       setLoading(false);
     }
@@ -151,7 +157,19 @@ export default function SearchForm() {
       </div>
 
       {error && (
-        <div className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</div>
+        <div className="mt-4 text-sm">
+          <div className="text-red-600 dark:text-red-400 mb-3">{error}</div>
+          {fallbackUrl && (
+            <a
+              href={fallbackUrl}
+              target="_blank"
+              rel="nofollow sponsored noopener"
+              className="inline-flex items-center rounded-md bg-foreground text-background px-3 py-1.5 text-sm hover:opacity-90"
+            >
+              楽天トラベルで検索結果を開く
+            </a>
+          )}
+        </div>
       )}
 
       {results && (
